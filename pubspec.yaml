@@ -98,8 +98,8 @@ flutter:
   # see https://flutter.dev/custom-fonts/#from-packages
 
   assets:
-    - assets/images/    # 存放图片资源
-    - assets/icons/     # 存放图标资源
-    - assets/music/     # 存放本地音乐文件（如果需要）
-    - assets/images/bg.jpg
-    - assets/images/default_bg.jpg
+    - assets/images/
+    - assets/images/backgrounds/
+    - assets/images/covers/
+    - assets/images/banners/
+    - assets/images/icons/
