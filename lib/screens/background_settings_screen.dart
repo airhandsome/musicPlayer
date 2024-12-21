@@ -78,25 +78,49 @@ class BackgroundSettingsScreen extends StatelessWidget {
               const SizedBox(height: 24),
 
               // 混合模式选择
-              Text(
-                '混合模式',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              DropdownButton<BlendMode>(
-                value: settings.blendMode,
-                isExpanded: true,
-                items: BlendMode.values
-                    .map((mode) => DropdownMenuItem(
-                          value: mode,
-                          child: Text(mode.toString().split('.').last),
-                        ))
-                    .toList(),
-                onChanged: (BlendMode? value) {
-                  if (value != null) {
-                    backgroundProvider.updateBlendMode(pageName, value);
-                  }
-                },
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Consumer<BackgroundProvider>(
+                  builder: (context, provider, _) {
+                    final settings = provider.getBackgroundForPage(pageName);
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('混合模式'),
+                        const SizedBox(height: 8),
+                        DropdownButton<BlendMode>(
+                          value: settings.blendMode,
+                          isExpanded: true,
+                          items:
+                              BackgroundSettings.blendModeOptions.map((option) {
+                            return DropdownMenuItem(
+                              value: option.mode,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(option.name),
+                                  Text(
+                                    option.description,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (BlendMode? value) {
+                            if (value != null) {
+                              provider.updateBlendMode(pageName, value);
+                            }
+                          },
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ),
 
               const SizedBox(height: 24),
