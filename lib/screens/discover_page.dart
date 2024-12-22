@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:musicplayer/providers/audio_provider.dart';
 import 'package:provider/provider.dart';
 import '../providers/music_provider.dart';
 import '../models/playlist.dart';
 import '../models/song.dart';
+import 'dart:async';
+import 'playlist_detail_page.dart';
 
 class DiscoverPage extends StatefulWidget {
   const DiscoverPage({super.key});
@@ -12,12 +15,40 @@ class DiscoverPage extends StatefulWidget {
 }
 
 class _DiscoverPageState extends State<DiscoverPage> {
+  late PageController _pageController;
+  Timer? _timer;
+  int _currentPage = 0;
+
   @override
   void initState() {
     super.initState();
+    _pageController = PageController();
+    _startAutoPlay();
     Future.microtask(
       () => context.read<MusicProvider>().loadInitialData(),
     );
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _startAutoPlay() {
+    _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (_currentPage < 2) {
+        _currentPage++;
+      } else {
+        _currentPage = 0;
+      }
+      _pageController.animateToPage(
+        _currentPage,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeIn,
+      );
+    });
   }
 
   @override
@@ -35,12 +66,43 @@ class _DiscoverPageState extends State<DiscoverPage> {
               child: Container(
                 height: 200,
                 margin: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Center(
-                  child: Text('轮播图区域'),
+                child: Stack(
+                  alignment: Alignment.bottomCenter,
+                  children: [
+                    PageView(
+                      controller: _pageController,
+                      onPageChanged: (index) {
+                        setState(() {
+                          _currentPage = index;
+                        });
+                      },
+                      children: [
+                        _buildBannerImage('assets/images/banners/banner1.jpg'),
+                        _buildBannerImage('assets/images/banners/banner2.jpg'),
+                        _buildBannerImage('assets/images/banners/banner3.jpg'),
+                      ],
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(
+                          3,
+                          (index) => Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _currentPage == index
+                                  ? Theme.of(context).primaryColor
+                                  : Colors.grey.withOpacity(0.5),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -89,7 +151,50 @@ class _DiscoverPageState extends State<DiscoverPage> {
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     final playlist = musicProvider.recommendedPlaylists[index];
-                    return _buildPlaylistItem(playlist);
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PlaylistDetailPage(
+                              playlist: playlist,
+                            ),
+                            fullscreenDialog: true,
+                          ),
+                        );
+                      },
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AspectRatio(
+                            aspectRatio: 1,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                image: DecorationImage(
+                                  image: AssetImage(playlist.coverUrl),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            playlist.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          Text(
+                            '${(playlist.playCount / 10000).toStringAsFixed(1)}万',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
                   },
                   childCount: musicProvider.recommendedPlaylists.length,
                 ),
@@ -110,24 +215,58 @@ class _DiscoverPageState extends State<DiscoverPage> {
               ),
             ),
 
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    if (index >= musicProvider.latestSongs.length) {
-                      return null;
-                    }
-                    final song = musicProvider.latestSongs[index];
-                    return _buildMusicListItem(song, musicProvider);
-                  },
-                ),
+            // 最新音乐列表
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final song = musicProvider.latestSongs[index];
+                  return ListTile(
+                    leading: ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: Image.asset(
+                        song.coverUrl,
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    title: Text(song.title),
+                    subtitle: Text(song.artist),
+                    trailing: Consumer<AudioProvider>(
+                      builder: (context, audioProvider, child) {
+                        final isCurrentSong =
+                            audioProvider.currentSong?.id == song.id;
+                        final isPlaying = audioProvider.isPlaying;
+
+                        return IconButton(
+                          icon: Icon(
+                            isCurrentSong && isPlaying
+                                ? Icons.pause_circle_outline
+                                : Icons.play_circle_outline,
+                          ),
+                          onPressed: () {
+                            if (isCurrentSong) {
+                              audioProvider.playPause();
+                            } else {
+                              audioProvider.playSong(song);
+                              audioProvider.setPlaylist(
+                                musicProvider.latestSongs,
+                                initialIndex: index,
+                              );
+                            }
+                          },
+                        );
+                      },
+                    ),
+                  );
+                },
+                childCount: musicProvider.latestSongs.length,
               ),
             ),
 
             // 底部留白
             const SliverToBoxAdapter(
-              child: SizedBox(height: 100),
+              child: SizedBox(height: 120), // 为底部播放器和导航栏留出空间
             ),
           ],
         );
@@ -154,30 +293,60 @@ class _DiscoverPageState extends State<DiscoverPage> {
     );
   }
 
-  Widget _buildPlaylistItem(Playlist playlist) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        AspectRatio(
-          aspectRatio: 1,
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              image: DecorationImage(
-                image: NetworkImage(playlist.coverUrl),
-                fit: BoxFit.cover,
+  Widget _buildPlaylistItem(BuildContext context, Playlist playlist) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PlaylistDetailPage(
+              playlist: playlist,
+            ),
+          ),
+        );
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AspectRatio(
+            aspectRatio: 1,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                image: DecorationImage(
+                  image: AssetImage(playlist.coverUrl),
+                  fit: BoxFit.cover,
+                ),
+                // 添加占位颜色，便于调试
+                color: Colors.grey[200],
+              ),
+              // 添加错误处理
+              child: Stack(
+                children: [
+                  if (playlist.coverUrl.isEmpty)
+                    const Center(
+                      child: Icon(Icons.music_note, size: 40),
+                    ),
+                ],
               ),
             ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          playlist.title,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 12),
-        ),
-      ],
+          const SizedBox(height: 8),
+          Text(
+            playlist.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 12),
+          ),
+          Text(
+            '${(playlist.playCount / 10000).toStringAsFixed(1)}万',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -230,7 +399,10 @@ class _DiscoverPageState extends State<DiscoverPage> {
                 Icons.play_circle_outline,
                 color: Theme.of(context).primaryColor,
               ),
-              onPressed: () => musicProvider.playSong(song),
+              onPressed: () {
+                final audioProvider = context.read<AudioProvider>();
+                audioProvider.playSong(song);
+              },
             ),
             IconButton(
               icon: Icon(
@@ -242,6 +414,18 @@ class _DiscoverPageState extends State<DiscoverPage> {
               },
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBannerImage(String imagePath) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        image: DecorationImage(
+          image: AssetImage(imagePath),
+          fit: BoxFit.cover,
         ),
       ),
     );

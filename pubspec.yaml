@@ -34,6 +34,7 @@ dependencies:
   font_awesome_flutter: ^10.6.0
   google_nav_bar: ^5.0.6
   just_audio: ^0.9.36
+  just_audio_windows: ^0.2.0
   cached_network_image: ^3.3.0
   flutter_svg: ^2.0.9
   provider: ^6.1.1
@@ -103,3 +104,5 @@ flutter:
     - assets/images/covers/
     - assets/images/banners/
     - assets/images/icons/
+    - assets/data/
+    - assets/audio/

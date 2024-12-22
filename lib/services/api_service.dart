@@ -26,7 +26,7 @@ class ApiService {
         coverUrl: 'https://picsum.photos/200',
         creatorId: 'user_1',
         creatorName: '网易云音乐',
-        songs: [],
+        songIds: [],
         playCount: 10000 + index * 1000,
         isOfficial: true,
       ),

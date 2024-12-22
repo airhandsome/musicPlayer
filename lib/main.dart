@@ -8,6 +8,7 @@ import 'providers/background_provider.dart';
 import 'providers/music_provider.dart';
 import 'services/api_service.dart';
 import 'services/audio_service.dart';
+import 'providers/audio_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,6 +53,7 @@ class MyApp extends StatelessWidget {
             audioService: audioService,
           ),
         ),
+        ChangeNotifierProvider(create: (_) => AudioProvider()),
       ],
       child: Consumer2<ThemeProvider, BackgroundProvider>(
         builder: (context, themeProvider, backgroundProvider, child) {

@@ -12,6 +12,7 @@ import '../widgets/app_drawer.dart';
 import '../widgets/animated_background.dart';
 import 'package:provider/provider.dart';
 import '../widgets/background_settings_bottom_sheet.dart';
+import '../providers/audio_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -155,66 +156,72 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMiniPlayer() {
-    print('_buildMiniPlayer called');
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    return Consumer<AudioProvider>(
+      builder: (context, audioProvider, child) {
+        final currentSong = audioProvider.currentSong;
+        if (currentSong == null) return const SizedBox.shrink();
 
-    return Container(
-      height: 64,
-      decoration: BoxDecoration(
-        color: isDarkMode ? Colors.black : Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: ListTile(
-        leading: Container(
-          width: 48,
-          height: 48,
+        final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+        return Container(
+          height: 64,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            image: const DecorationImage(
-              image: NetworkImage('https://example.com/anime-cover.jpg'),
-              fit: BoxFit.cover,
-            ),
-          ),
-        ),
-        title: Text(
-          '当前播放的歌曲',
-          style: TextStyle(
-            color: isDarkMode ? Colors.white : Colors.black87,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        subtitle: Text(
-          '歌手名称',
-          style: TextStyle(
-            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-          ),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: Icon(
-                Icons.play_arrow,
-                color: isDarkMode ? Colors.white : Colors.black87,
+            color: isDarkMode ? Colors.black : Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 8,
+                offset: const Offset(0, -2),
               ),
-              onPressed: () {},
-            ),
-            IconButton(
-              icon: Icon(
-                Icons.skip_next,
-                color: isDarkMode ? Colors.white : Colors.black87,
+            ],
+          ),
+          child: ListTile(
+            leading: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                image: DecorationImage(
+                  image: AssetImage(currentSong.coverUrl),
+                  fit: BoxFit.cover,
+                ),
               ),
-              onPressed: () {},
             ),
-          ],
-        ),
-      ),
+            title: Text(
+              currentSong.title,
+              style: TextStyle(
+                color: isDarkMode ? Colors.white : Colors.black87,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            subtitle: Text(
+              currentSong.artist,
+              style: TextStyle(
+                color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+              ),
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon(
+                    audioProvider.isPlaying ? Icons.pause : Icons.play_arrow,
+                    color: isDarkMode ? Colors.white : Colors.black87,
+                  ),
+                  onPressed: () => audioProvider.playPause(),
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.skip_next,
+                    color: isDarkMode ? Colors.white : Colors.black87,
+                  ),
+                  onPressed: () => audioProvider.nextSong(),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

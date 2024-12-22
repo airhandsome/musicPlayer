@@ -1,5 +1,3 @@
-import 'song.dart';
-
 class Playlist {
   final String id;
   final String title;
@@ -7,7 +5,7 @@ class Playlist {
   final String coverUrl;
   final String creatorId;
   final String creatorName;
-  final List<Song> songs;
+  final List<String> songIds;
   final int playCount;
   final bool isOfficial;
 
@@ -18,24 +16,22 @@ class Playlist {
     required this.coverUrl,
     required this.creatorId,
     required this.creatorName,
-    required this.songs,
-    this.playCount = 0,
-    this.isOfficial = false,
+    required this.songIds,
+    required this.playCount,
+    required this.isOfficial,
   });
 
   factory Playlist.fromJson(Map<String, dynamic> json) {
     return Playlist(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      description: json['description'] as String,
-      coverUrl: json['coverUrl'] as String,
-      creatorId: json['creatorId'] as String,
-      creatorName: json['creatorName'] as String,
-      songs: (json['songs'] as List)
-          .map((songJson) => Song.fromJson(songJson))
-          .toList(),
-      playCount: json['playCount'] as int? ?? 0,
-      isOfficial: json['isOfficial'] as bool? ?? false,
+      id: json['id'],
+      title: json['title'],
+      description: json['description'],
+      coverUrl: json['coverUrl'],
+      creatorId: json['creatorId'],
+      creatorName: json['creatorName'],
+      songIds: List<String>.from(json['songIds']),
+      playCount: json['playCount'],
+      isOfficial: json['isOfficial'],
     );
   }
 
@@ -45,11 +41,7 @@ class Playlist {
       'title': title,
       'description': description,
       'coverUrl': coverUrl,
-      'creatorId': creatorId,
-      'creatorName': creatorName,
-      'songs': songs.map((song) => song.toJson()).toList(),
-      'playCount': playCount,
-      'isOfficial': isOfficial,
+      'songIds': songIds,
     };
   }
 }
