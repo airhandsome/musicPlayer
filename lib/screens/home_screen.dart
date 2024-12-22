@@ -13,6 +13,7 @@ import '../widgets/animated_background.dart';
 import 'package:provider/provider.dart';
 import '../widgets/background_settings_bottom_sheet.dart';
 import '../providers/audio_provider.dart';
+import 'player_detail_page.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -163,61 +164,71 @@ class _HomeScreenState extends State<HomeScreen> {
 
         final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-        return Container(
-          height: 64,
-          decoration: BoxDecoration(
-            color: isDarkMode ? Colors.black : Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 8,
-                offset: const Offset(0, -2),
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const PlayerDetailPage(),
               ),
-            ],
-          ),
-          child: ListTile(
-            leading: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                image: DecorationImage(
-                  image: AssetImage(currentSong.coverUrl),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-            title: Text(
-              currentSong.title,
-              style: TextStyle(
-                color: isDarkMode ? Colors.white : Colors.black87,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            subtitle: Text(
-              currentSong.artist,
-              style: TextStyle(
-                color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-              ),
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: Icon(
-                    audioProvider.isPlaying ? Icons.pause : Icons.play_arrow,
-                    color: isDarkMode ? Colors.white : Colors.black87,
-                  ),
-                  onPressed: () => audioProvider.playPause(),
-                ),
-                IconButton(
-                  icon: Icon(
-                    Icons.skip_next,
-                    color: isDarkMode ? Colors.white : Colors.black87,
-                  ),
-                  onPressed: () => audioProvider.nextSong(),
+            );
+          },
+          child: Container(
+            height: 64,
+            decoration: BoxDecoration(
+              color: isDarkMode ? Colors.black : Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, -2),
                 ),
               ],
+            ),
+            child: ListTile(
+              leading: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  image: DecorationImage(
+                    image: AssetImage(currentSong.coverUrl),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              title: Text(
+                currentSong.title,
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white : Colors.black87,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              subtitle: Text(
+                currentSong.artist,
+                style: TextStyle(
+                  color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                ),
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      audioProvider.isPlaying ? Icons.pause : Icons.play_arrow,
+                      color: isDarkMode ? Colors.white : Colors.black87,
+                    ),
+                    onPressed: () => audioProvider.playPause(),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.skip_next,
+                      color: isDarkMode ? Colors.white : Colors.black87,
+                    ),
+                    onPressed: () => audioProvider.nextSong(),
+                  ),
+                ],
+              ),
             ),
           ),
         );

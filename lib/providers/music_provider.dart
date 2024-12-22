@@ -12,6 +12,7 @@ class MusicProvider with ChangeNotifier {
   List<Playlist> _recommendedPlaylists = [];
   List<Song> _latestSongs = [];
   bool _isLoading = true;
+  final List<Playlist> _userPlaylists = [];
 
   MusicProvider({
     required this.apiService,
@@ -21,6 +22,7 @@ class MusicProvider with ChangeNotifier {
   List<Playlist> get recommendedPlaylists => _recommendedPlaylists;
   List<Song> get latestSongs => _latestSongs;
   bool get isLoading => _isLoading;
+  List<Playlist> get userPlaylists => _userPlaylists;
 
   Future<void> loadInitialData() async {
     try {
@@ -72,6 +74,38 @@ class MusicProvider with ChangeNotifier {
     } catch (e) {
       print('Error getting song: $e');
       return null;
+    }
+  }
+
+  // 创建新播放列表
+  Future<void> createPlaylist(String name) async {
+    final newPlaylist = Playlist(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      title: name,
+      coverUrl: 'assets/images/playlist_default.jpg', // 默认封面
+      description: '',
+      songIds: [],
+      playCount: 0,
+      creatorId: 'current_user',
+      creatorName: '我的歌单',
+      isOfficial: false,
+    );
+
+    _userPlaylists.add(newPlaylist);
+    notifyListeners();
+    // TODO: 保存到本地存储
+  }
+
+  // 添加歌曲到播放列表
+  Future<void> addSongToPlaylist(Song song, Playlist playlist) async {
+    final index = _userPlaylists.indexWhere((p) => p.id == playlist.id);
+    if (index != -1) {
+      // 检查歌曲是否已经在播放列表中
+      if (!_userPlaylists[index].songIds.contains(song.toString())) {
+        _userPlaylists[index].songIds.add(song.toString());
+        notifyListeners();
+        // TODO: 保存到本地存储
+      }
     }
   }
 }

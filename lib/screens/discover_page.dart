@@ -6,6 +6,7 @@ import '../models/playlist.dart';
 import '../models/song.dart';
 import 'dart:async';
 import 'playlist_detail_page.dart';
+import 'player_detail_page.dart';
 
 class DiscoverPage extends StatefulWidget {
   const DiscoverPage({super.key});
@@ -353,69 +354,198 @@ class _DiscoverPageState extends State<DiscoverPage> {
   Widget _buildMusicListItem(Song song, MusicProvider musicProvider) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      color: isDarkMode ? const Color(0xFF2C2C2C) : Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const PlayerDetailPage(),
+          ),
+        );
+      },
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 8),
+        color: isDarkMode ? const Color(0xFF2C2C2C) : Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: ListTile(
+          contentPadding: const EdgeInsets.all(8),
+          leading: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              song.coverUrl,
+              width: 56,
+              height: 56,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: 56,
+                  height: 56,
+                  color: Colors.grey[300],
+                  child: const Icon(Icons.music_note),
+                );
+              },
+            ),
+          ),
+          title: Text(
+            song.title,
+            style: TextStyle(
+              color: isDarkMode ? Colors.white : Colors.black87,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          subtitle: Text(
+            song.artist,
+            style: TextStyle(
+              color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+            ),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: Icon(
+                  Icons.play_circle_outline,
+                  color: Theme.of(context).primaryColor,
+                ),
+                onPressed: () {
+                  final audioProvider = context.read<AudioProvider>();
+                  audioProvider.playSong(song);
+                },
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.more_vert,
+                  color: isDarkMode ? Colors.white70 : Colors.grey[700],
+                ),
+                onPressed: () {
+                  showModalBottomSheet(
+                    context: context,
+                    backgroundColor: Colors.transparent,
+                    builder: (context) => _buildMoreOptionsSheet(context, song),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(8),
-        leading: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.network(
-            song.coverUrl,
-            width: 56,
-            height: 56,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return Container(
-                width: 56,
-                height: 56,
-                color: Colors.grey[300],
-                child: const Icon(Icons.music_note),
+    );
+  }
+
+  Widget _buildMoreOptionsSheet(BuildContext context, Song song) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDarkMode ? Colors.grey[900] : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 歌曲信息头部
+          ListTile(
+            leading: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: Image.asset(
+                song.coverUrl,
+                width: 40,
+                height: 40,
+                fit: BoxFit.cover,
+              ),
+            ),
+            title: Text(
+              song.title,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text(song.artist),
+          ),
+          const Divider(height: 1),
+          // 操作选项列表
+          _buildOptionTile(
+            context,
+            icon: Icons.playlist_add,
+            title: '添加到播放列表',
+            onTap: () {
+              Navigator.pop(context);
+              _showAddToPlaylistDialog(context, song);
+            },
+          ),
+          _buildOptionTile(
+            context,
+            icon: Icons.favorite_border,
+            title: '收藏到我喜欢',
+            onTap: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('收藏功能即将上线')),
               );
             },
           ),
-        ),
-        title: Text(
-          song.title,
-          style: TextStyle(
-            color: isDarkMode ? Colors.white : Colors.black87,
-            fontWeight: FontWeight.w500,
+          _buildOptionTile(
+            context,
+            icon: Icons.download_outlined,
+            title: '下载',
+            onTap: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('下载功能即将上线')),
+              );
+            },
           ),
-        ),
-        subtitle: Text(
-          song.artist,
-          style: TextStyle(
-            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+          _buildOptionTile(
+            context,
+            icon: Icons.share_outlined,
+            title: '分享',
+            onTap: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('分享功能即将上线')),
+              );
+            },
           ),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: Icon(
-                Icons.play_circle_outline,
-                color: Theme.of(context).primaryColor,
-              ),
-              onPressed: () {
-                final audioProvider = context.read<AudioProvider>();
-                audioProvider.playSong(song);
-              },
-            ),
-            IconButton(
-              icon: Icon(
-                Icons.more_vert,
-                color: isDarkMode ? Colors.white70 : Colors.grey[700],
-              ),
-              onPressed: () {
-                // TODO: 显示更多选项菜单
-              },
-            ),
-          ],
-        ),
+          _buildOptionTile(
+            context,
+            icon: Icons.person_outline,
+            title: '查看歌手',
+            onTap: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('歌手详情功能即将上线')),
+              );
+            },
+          ),
+          _buildOptionTile(
+            context,
+            icon: Icons.album_outlined,
+            title: '查看专辑',
+            onTap: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('专辑详情功能即将上线')),
+              );
+            },
+          ),
+          const SizedBox(height: 8),
+        ],
       ),
+    );
+  }
+
+  Widget _buildOptionTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      onTap: onTap,
+      dense: true,
+      visualDensity: const VisualDensity(vertical: -2),
     );
   }
 
@@ -427,6 +557,117 @@ class _DiscoverPageState extends State<DiscoverPage> {
           image: AssetImage(imagePath),
           fit: BoxFit.cover,
         ),
+      ),
+    );
+  }
+
+  void _showAddToPlaylistDialog(BuildContext context, Song song) {
+    final musicProvider = context.read<MusicProvider>();
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    '添加到播放列表',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  TextButton.icon(
+                    icon: const Icon(Icons.add),
+                    label: const Text('新建'),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _showCreatePlaylistDialog(context, song);
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: musicProvider.userPlaylists.length,
+                itemBuilder: (context, index) {
+                  final playlist = musicProvider.userPlaylists[index];
+                  return ListTile(
+                    leading: ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: Image.asset(
+                        playlist.coverUrl,
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    title: Text(playlist.title),
+                    subtitle: Text('${playlist.songIds.length}首'),
+                    onTap: () {
+                      musicProvider.addSongToPlaylist(song, playlist);
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('已添加到"${playlist.title}"')),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showCreatePlaylistDialog(BuildContext context, Song song) {
+    final textController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('新建播放列表'),
+        content: TextField(
+          controller: textController,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: '播放列表标题',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (textController.text.isNotEmpty) {
+                final musicProvider = context.read<MusicProvider>();
+                await musicProvider.createPlaylist(textController.text);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  _showAddToPlaylistDialog(context, song);
+                }
+              }
+            },
+            child: const Text('创建'),
+          ),
+        ],
       ),
     );
   }

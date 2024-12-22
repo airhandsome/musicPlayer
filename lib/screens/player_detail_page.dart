@@ -3,8 +3,31 @@ import 'package:provider/provider.dart';
 import '../providers/audio_provider.dart';
 import '../models/song.dart';
 
-class PlayerDetailPage extends StatelessWidget {
+class PlayerDetailPage extends StatefulWidget {
   const PlayerDetailPage({super.key});
+
+  @override
+  State<PlayerDetailPage> createState() => _PlayerDetailPageState();
+}
+
+class _PlayerDetailPageState extends State<PlayerDetailPage>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(seconds: 10),
+      vsync: this,
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -13,8 +36,17 @@ class PlayerDetailPage extends StatelessWidget {
         final song = audioProvider.currentSong;
         if (song == null) return const SizedBox.shrink();
 
+        if (audioProvider.isPlaying) {
+          _controller.repeat();
+        } else {
+          _controller.stop();
+        }
+
+        final hasNext = audioProvider.hasNext;
+        final hasPrevious = audioProvider.hasPrevious;
+
         return Scaffold(
-          backgroundColor: Colors.black87,
+          backgroundColor: Color.fromARGB(199, 141, 207, 181),
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
@@ -22,44 +54,63 @@ class PlayerDetailPage extends StatelessWidget {
               icon: const Icon(Icons.keyboard_arrow_down),
               onPressed: () => Navigator.pop(context),
             ),
-            title: Column(
-              children: [
-                Text(
-                  song.title,
-                  style: const TextStyle(fontSize: 16),
-                ),
-                Text(
-                  song.artist,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
-            ),
-            centerTitle: true,
           ),
           body: Column(
             children: [
               const Spacer(),
-              // 唱片旋转动画
-              Container(
-                width: 300,
-                height: 300,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.grey[800]!, width: 20),
-                ),
-                child: ClipOval(
-                  child: Image.asset(
-                    song.coverUrl,
-                    fit: BoxFit.cover,
+              // 旋转的唱片动画
+              Center(
+                child: RotationTransition(
+                  turns: _controller,
+                  child: Container(
+                    width: 300,
+                    height: 300,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.black, width: 20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.5),
+                          blurRadius: 15,
+                          spreadRadius: 5,
+                        ),
+                      ],
+                    ),
+                    child: ClipOval(
+                      child: Image.asset(
+                        song.coverUrl,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
                   ),
                 ),
               ),
               const Spacer(),
-              // 进度条
+              // 歌曲信息
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   children: [
+                    Text(
+                      song.title,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      song.artist,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.grey[400],
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    // 进度条
                     StreamBuilder<Duration>(
                       stream: audioProvider.positionStream,
                       builder: (context, snapshot) {
@@ -118,20 +169,17 @@ class PlayerDetailPage extends StatelessWidget {
                   children: [
                     IconButton(
                       icon: const Icon(
-                        Icons.shuffle,
-                        color: Colors.white,
-                      ),
-                      onPressed: () {
-                        // TODO: 实现随机播放
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(
                         Icons.skip_previous,
                         color: Colors.white,
                         size: 36,
                       ),
-                      onPressed: () => audioProvider.previousSong(),
+                      onPressed: hasPrevious
+                          ? () => audioProvider.previousSong()
+                          : () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('已经是第一首歌了')),
+                              );
+                            },
                     ),
                     IconButton(
                       icon: Icon(
@@ -139,7 +187,7 @@ class PlayerDetailPage extends StatelessWidget {
                             ? Icons.pause_circle_filled
                             : Icons.play_circle_filled,
                         color: Colors.white,
-                        size: 64,
+                        size: 48,
                       ),
                       onPressed: () => audioProvider.playPause(),
                     ),
@@ -149,15 +197,40 @@ class PlayerDetailPage extends StatelessWidget {
                         color: Colors.white,
                         size: 36,
                       ),
-                      onPressed: () => audioProvider.nextSong(),
+                      onPressed: hasNext
+                          ? () => audioProvider.nextSong()
+                          : () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('已经是最后一首歌了')),
+                              );
+                            },
                     ),
                     IconButton(
-                      icon: const Icon(
-                        Icons.repeat,
+                      icon: Icon(
+                        _getRepeatIcon(audioProvider.playMode),
                         color: Colors.white,
+                        size: 36,
                       ),
                       onPressed: () {
-                        // TODO: 实现循环播放
+                        audioProvider.togglePlayMode();
+                        String message = '';
+                        switch (audioProvider.playMode) {
+                          case PlayMode.sequence:
+                            message = '顺序播放';
+                            break;
+                          case PlayMode.loop:
+                            message = '列表循环';
+                            break;
+                          case PlayMode.single:
+                            message = '单曲循环';
+                            break;
+                          case PlayMode.random:
+                            message = '随机播放';
+                            break;
+                        }
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('已切换到$message')),
+                        );
                       },
                     ),
                   ],
@@ -176,5 +249,18 @@ class PlayerDetailPage extends StatelessWidget {
     final minutes = twoDigits(duration.inMinutes.remainder(60));
     final seconds = twoDigits(duration.inSeconds.remainder(60));
     return '$minutes:$seconds';
+  }
+
+  IconData _getRepeatIcon(PlayMode mode) {
+    switch (mode) {
+      case PlayMode.sequence:
+        return Icons.repeat;
+      case PlayMode.loop:
+        return Icons.repeat;
+      case PlayMode.single:
+        return Icons.repeat_one;
+      case PlayMode.random:
+        return Icons.shuffle;
+    }
   }
 }

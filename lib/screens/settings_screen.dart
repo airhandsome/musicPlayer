@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../screens/background_settings_screen.dart';
+import '../providers/audio_provider.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -218,13 +219,83 @@ class _QualitySettingTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: const Icon(Icons.high_quality),
-      title: const Text('音质设置'),
-      subtitle: const Text('标准音质'),
-      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-      onTap: () {
-        // TODO: 实现音质设置对话框
+    return Consumer<AudioProvider>(
+      builder: (context, audioProvider, child) {
+        return ListTile(
+          leading: const Icon(Icons.high_quality),
+          title: const Text('音质设置'),
+          subtitle: Text(audioProvider.quality.label),
+          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+          onTap: () {
+            showDialog(
+              context: context,
+              builder: (context) => _QualityDialog(),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _QualityDialog extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AudioProvider>(
+      builder: (context, audioProvider, child) {
+        return SimpleDialog(
+          title: const Text('音质设置'),
+          children: [
+            ...AudioQuality.values.map((quality) {
+              return RadioListTile<AudioQuality>(
+                title: Text(quality.label),
+                subtitle: Text(quality.description),
+                value: quality,
+                groupValue: audioProvider.quality,
+                onChanged: (AudioQuality? value) {
+                  if (value != null) {
+                    if (value == AudioQuality.hifi) {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('提示'),
+                          content: const Text('无损音质需要更多的存储空间和流量，确定要切换吗？'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('取消'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                audioProvider.setQuality(value);
+                                Navigator.pop(context); // 关闭确认对话框
+                                Navigator.pop(context); // 关闭音质设置对话框
+                              },
+                              child: const Text('确定'),
+                            ),
+                          ],
+                        ),
+                      );
+                    } else {
+                      audioProvider.setQuality(value);
+                      Navigator.pop(context);
+                    }
+                  }
+                },
+              );
+            }).toList(),
+            const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text(
+                '提示：较高音质需要更多的存储空间和流量',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
+                ),
+              ),
+            ),
+          ],
+        );
       },
     );
   }
