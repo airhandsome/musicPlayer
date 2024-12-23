@@ -5,6 +5,7 @@ import '../models/playlist.dart';
 import '../models/song.dart';
 import '../services/api_service.dart';
 import '../services/audio_service.dart';
+import '../services/local_music_service.dart';
 
 class MusicProvider with ChangeNotifier {
   final ApiService apiService;
@@ -106,6 +107,21 @@ class MusicProvider with ChangeNotifier {
         notifyListeners();
         // TODO: 保存到本地存储
       }
+    }
+  }
+
+  Future<void> importLocalMusic(
+    void Function(double progress, String message) onProgress,
+  ) async {
+    final localMusicService = LocalMusicService();
+    final result = await localMusicService.importLocalMusic(onProgress);
+
+    if (result != null) {
+      final (playlist, songs) = result;
+      _recommendedPlaylists.add(playlist);
+      // 将歌曲添加到本地音乐库
+      _latestSongs.addAll(songs);
+      notifyListeners();
     }
   }
 }

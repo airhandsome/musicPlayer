@@ -1,4 +1,43 @@
-class PodcastEpisode {
+class Podcast {
+  final String id;
+  final String title;
+  final String author;
+  final String coverUrl;
+  final String description;
+  final int episodeCount;
+  final int subscriberCount;
+  final bool isSubscribed;
+  final List<Episode> episodes;
+
+  Podcast({
+    required this.id,
+    required this.title,
+    required this.author,
+    required this.coverUrl,
+    required this.description,
+    required this.episodeCount,
+    required this.subscriberCount,
+    this.isSubscribed = false,
+    required this.episodes,
+  });
+
+  factory Podcast.fromJson(Map<String, dynamic> json) {
+    return Podcast(
+      id: json['id'],
+      title: json['title'],
+      author: json['author'],
+      coverUrl: json['coverUrl'],
+      description: json['description'],
+      episodeCount: json['episodeCount'],
+      subscriberCount: json['subscriberCount'],
+      isSubscribed: json['isSubscribed'] ?? false,
+      episodes:
+          (json['episodes'] as List).map((e) => Episode.fromJson(e)).toList(),
+    );
+  }
+}
+
+class Episode {
   final String id;
   final String title;
   final String description;
@@ -6,63 +45,29 @@ class PodcastEpisode {
   final Duration duration;
   final DateTime publishDate;
   final int playCount;
+  final bool isPlayed;
 
-  PodcastEpisode({
+  Episode({
     required this.id,
     required this.title,
     required this.description,
     required this.audioUrl,
     required this.duration,
     required this.publishDate,
-    this.playCount = 0,
+    required this.playCount,
+    this.isPlayed = false,
   });
 
-  factory PodcastEpisode.fromJson(Map<String, dynamic> json) {
-    return PodcastEpisode(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      description: json['description'] as String,
-      audioUrl: json['audioUrl'] as String,
-      duration: Duration(seconds: json['duration'] as int),
-      publishDate: DateTime.parse(json['publishDate'] as String),
-      playCount: json['playCount'] as int? ?? 0,
-    );
-  }
-}
-
-class Podcast {
-  final String id;
-  final String title;
-  final String description;
-  final String coverUrl;
-  final String author;
-  final List<String> categories;
-  final List<PodcastEpisode> episodes;
-  final int subscriberCount;
-
-  Podcast({
-    required this.id,
-    required this.title,
-    required this.description,
-    required this.coverUrl,
-    required this.author,
-    required this.categories,
-    required this.episodes,
-    this.subscriberCount = 0,
-  });
-
-  factory Podcast.fromJson(Map<String, dynamic> json) {
-    return Podcast(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      description: json['description'] as String,
-      coverUrl: json['coverUrl'] as String,
-      author: json['author'] as String,
-      categories: (json['categories'] as List).cast<String>(),
-      episodes: (json['episodes'] as List)
-          .map((episodeJson) => PodcastEpisode.fromJson(episodeJson))
-          .toList(),
-      subscriberCount: json['subscriberCount'] as int? ?? 0,
+  factory Episode.fromJson(Map<String, dynamic> json) {
+    return Episode(
+      id: json['id'],
+      title: json['title'],
+      description: json['description'],
+      audioUrl: json['audioUrl'],
+      duration: Duration(seconds: json['durationSeconds']),
+      publishDate: DateTime.parse(json['publishDate']),
+      playCount: json['playCount'],
+      isPlayed: json['isPlayed'] ?? false,
     );
   }
 }

@@ -61,30 +61,14 @@ class ApiService {
         description: '这是一个播客节目',
         coverUrl: 'https://picsum.photos/200',
         author: '主播 ${index + 1}',
-        categories: ['音乐', '谈话'],
-        episodes: [],
+        episodeCount: 10 + index,
         subscriberCount: 5000 + index * 500,
+        episodes: [],
       ),
     );
   }
 
   // 获取社区动态
-  Future<List<Post>> getCommunityPosts() async {
-    await _simulateNetworkDelay();
-    return List.generate(
-      10,
-      (index) => Post(
-        id: 'post_$index',
-        userId: 'user_$index',
-        username: '用户 ${index + 1}',
-        content: '这是第 ${index + 1} 条动态内容...',
-        createTime: DateTime.now().subtract(Duration(hours: index)),
-        songId: index % 2 == 0 ? 'song_$index' : null,
-        songTitle: index % 2 == 0 ? '分享的歌曲 $index' : null,
-        songArtist: index % 2 == 0 ? '歌手 $index' : null,
-      ),
-    );
-  }
 
   // 获取用户信息
   Future<User> getUserProfile(String userId) async {

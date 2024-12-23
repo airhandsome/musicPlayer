@@ -1,49 +1,63 @@
-import 'package:flutter/foundation.dart';
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/post.dart';
-import '../services/api_service.dart';
 
 class CommunityProvider with ChangeNotifier {
-  final ApiService _apiService;
-
-  CommunityProvider({required ApiService apiService})
-      : _apiService = apiService;
-
   List<Post> _posts = [];
   bool _isLoading = false;
+  String? _error;
 
   List<Post> get posts => _posts;
   bool get isLoading => _isLoading;
+  String? get error => _error;
 
   Future<void> loadPosts() async {
-    _isLoading = true;
-    notifyListeners();
-
     try {
-      _posts = await _apiService.getCommunityPosts();
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+
+      // 模拟网络延迟
+      await Future.delayed(const Duration(seconds: 1));
+
+      final String jsonData =
+          await rootBundle.loadString('assets/data/community_posts.json');
+      final data = json.decode(jsonData);
+
+      _posts =
+          (data['posts'] as List).map((json) => Post.fromJson(json)).toList();
+      _isLoading = false;
+      notifyListeners();
     } catch (e) {
-      if (kDebugMode) {
-        print('Error loading posts: $e');
-      }
-    }
-
-    _isLoading = false;
-    notifyListeners();
-  }
-
-  Future<void> likePost(String postId) async {
-    final postIndex = _posts.indexWhere((post) => post.id == postId);
-    if (postIndex != -1) {
-      final post = _posts[postIndex];
-      _posts[postIndex] = Post(
-        id: post.id,
-        userId: post.userId,
-        username: post.username,
-        content: post.content,
-        createTime: post.createTime,
-        likeCount: post.isLiked ? post.likeCount - 1 : post.likeCount + 1,
-        isLiked: !post.isLiked,
-      );
+      _error = '加载失败：$e';
+      _isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> toggleLike(String postId) async {
+    final index = _posts.indexWhere((post) => post.id == postId);
+    if (index == -1) return;
+
+    // 模拟网络请求
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    final post = _posts[index];
+    final updatedPost = Post(
+      id: post.id,
+      userId: post.userId,
+      userName: post.userName,
+      userAvatar: post.userAvatar,
+      content: post.content,
+      images: post.images,
+      createTime: post.createTime,
+      likeCount: post.isLiked ? post.likeCount - 1 : post.likeCount + 1,
+      commentCount: post.commentCount,
+      isLiked: !post.isLiked,
+    );
+
+    _posts[index] = updatedPost;
+    notifyListeners();
   }
 }

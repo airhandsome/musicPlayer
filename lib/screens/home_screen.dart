@@ -14,6 +14,7 @@ import 'package:provider/provider.dart';
 import '../widgets/background_settings_bottom_sheet.dart';
 import '../providers/audio_provider.dart';
 import 'player_detail_page.dart';
+import 'mine_page.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -29,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
     const DiscoverPage(),
     const PodcastPage(),
     const CommunityPage(),
-    const MyMusicPage(),
+    const MinePage(),
   ];
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();

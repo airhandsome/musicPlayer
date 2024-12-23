@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:musicplayer/providers/music_provider.dart';
+import 'package:musicplayer/widgets/import_progress_dialog.dart';
 
 class MinePage extends StatelessWidget {
   const MinePage({super.key});
@@ -46,6 +49,36 @@ class MinePage extends StatelessWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               // TODO: 导航到本地下载页面
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.folder_open),
+            title: const Text('导入本地音乐'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () async {
+              final musicProvider = context.read<MusicProvider>();
+              ImportProgressDialogState? dialogState;
+
+              // 显示进度对话框
+              if (!context.mounted) return;
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => ImportProgressDialog(
+                  onInit: (state) => dialogState = state,
+                ),
+              );
+
+              await musicProvider.importLocalMusic((progress, message) {
+                dialogState?.updateProgress(progress, message);
+              });
+
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('导入完成')),
+                );
+              }
             },
           ),
         ],

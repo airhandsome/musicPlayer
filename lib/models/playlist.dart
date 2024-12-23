@@ -2,7 +2,7 @@ class Playlist {
   final String id;
   final String title;
   final String description;
-  final String coverUrl;
+  String coverUrl;
   final String creatorId;
   final String creatorName;
   final List<String> songIds;

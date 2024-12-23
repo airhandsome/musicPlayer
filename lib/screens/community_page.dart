@@ -1,130 +1,170 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../models/post.dart';
+import 'package:timeago/timeago.dart' as timeago;
+import 'package:provider/provider.dart';
+import '../providers/community_provider.dart';
 
-class CommunityPage extends StatelessWidget {
+class CommunityPage extends StatefulWidget {
   const CommunityPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return CustomScrollView(
-      slivers: [
-        // 动态发布区域
-        SliverToBoxAdapter(
-          child: Container(
-            margin: const EdgeInsets.all(16),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Row(
-              children: [
-                CircleAvatar(
-                  child: Icon(Icons.person),
-                ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: Text('分享你的音乐动态...'),
-                ),
-                Icon(Icons.image),
-              ],
-            ),
-          ),
-        ),
+  State<CommunityPage> createState() => _CommunityPageState();
+}
 
-        // 动态列表
-        SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) => _buildPostItem(),
-            childCount: 10,
-          ),
-        ),
-      ],
+class _CommunityPageState extends State<CommunityPage> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(
+      () => context.read<CommunityProvider>().loadPosts(),
     );
   }
 
-  Widget _buildPostItem() {
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<CommunityProvider>(
+      builder: (context, provider, child) {
+        if (provider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (provider.error != null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(provider.error!),
+                ElevatedButton(
+                  onPressed: provider.loadPosts,
+                  child: const Text('重试'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return RefreshIndicator(
+          onRefresh: provider.loadPosts,
+          child: ListView.builder(
+            itemCount: provider.posts.length + 1,
+            itemBuilder: (context, index) {
+              if (index == provider.posts.length) {
+                return const SizedBox(height: 80);
+              }
+              final post = provider.posts[index];
+              return _PostCard(post: post);
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _PostCard extends StatelessWidget {
+  final Post post;
+
+  const _PostCard({required this.post});
+
+  @override
+  Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 用户信息
-            const Row(
-              children: [
-                CircleAvatar(
-                  child: Icon(Icons.person),
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('用户名称',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                      Text('2小时前', style: TextStyle(color: Colors.grey)),
-                    ],
-                  ),
-                ),
-                Icon(Icons.more_horiz),
-              ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ListTile(
+            leading: CircleAvatar(
+              backgroundImage: AssetImage(post.userAvatar),
             ),
-            const SizedBox(height: 12),
-
-            // 动态内容
-            const Text('这是一条音乐动态分享...'),
-            const SizedBox(height: 12),
-
-            // 音乐卡片
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
+            title: Text(post.userName),
+            subtitle: Text(timeago.format(post.createTime, locale: 'zh')),
+            trailing: IconButton(
+              icon: const Icon(Icons.more_horiz),
+              onPressed: () {
+                // TODO: 显示更多选项
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(post.content),
+          ),
+          if (post.images.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: _buildImageGrid(post.images),
+            ),
+          const Divider(height: 1),
+          Row(
+            children: [
+              _buildActionButton(
+                icon: post.isLiked ? Icons.favorite : Icons.favorite_border,
+                label: '${post.likeCount}',
+                onPressed: () {
+                  context.read<CommunityProvider>().toggleLike(post.id);
+                },
               ),
-              child: const Row(
-                children: [
-                  Icon(Icons.music_note),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('歌曲名称'),
-                        Text('歌手名称', style: TextStyle(color: Colors.grey)),
-                      ],
-                    ),
-                  ),
-                  Icon(Icons.play_circle_outline),
-                ],
+              _buildActionButton(
+                icon: Icons.comment_outlined,
+                label: '${post.commentCount}',
+                onPressed: () {
+                  // TODO: 实现评论功能
+                },
               ),
-            ),
-
-            // 互动按钮
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildActionButton(Icons.thumb_up_outlined, '点赞'),
-                _buildActionButton(Icons.comment_outlined, '评论'),
-                _buildActionButton(Icons.share_outlined, '分享'),
-              ],
-            ),
-          ],
-        ),
+              _buildActionButton(
+                icon: Icons.share_outlined,
+                label: '分享',
+                onPressed: () {
+                  // TODO: 实现分享功能
+                },
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildActionButton(IconData icon, String label) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 16),
-        const SizedBox(width: 4),
-        Text(label),
-      ],
+  Widget _buildImageGrid(List<String> images) {
+    if (images.length == 1) {
+      return AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Image.asset(
+          images[0],
+          fit: BoxFit.cover,
+        ),
+      );
+    }
+
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 3,
+      mainAxisSpacing: 4,
+      crossAxisSpacing: 4,
+      children: images
+          .map((image) => Image.asset(
+                image,
+                fit: BoxFit.cover,
+              ))
+          .toList(),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onPressed,
+  }) {
+    return Expanded(
+      child: TextButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon),
+        label: Text(label),
+      ),
     );
   }
 }

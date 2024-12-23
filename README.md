@@ -97,4 +97,4 @@ flutter run
 
 ## 许可证
 
-MIT License
+GNU License
